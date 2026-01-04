@@ -12,6 +12,7 @@ __pycache__/
 # Archivos temporales y resultados
 temp_audio.mp3
 *.txt
+!requirements.txt
 *.mp4
 
 # VS Code
