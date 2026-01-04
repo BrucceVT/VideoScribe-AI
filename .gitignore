@@ -1,0 +1,19 @@
+# Entornos virtuales
+.venv/
+env/
+venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Archivos temporales y resultados
+temp_audio.mp3
+*.txt
+*.mp4
+
+# VS Code
+.vscode/
+.idea/
