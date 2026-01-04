@@ -13,6 +13,7 @@ __pycache__/
 temp_audio.mp3
 *.txt
 !requirements.txt
+!packages.txt
 *.mp4
 
 # VS Code

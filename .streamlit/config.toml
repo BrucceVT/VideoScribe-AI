@@ -1,0 +1,8 @@
+[client]
+# Oculta el menú superior derecho y el pie de página "Made with Streamlit"
+toolbarMode = "minimal"
+showErrorDetails = false
+
+[browser]
+# Quita la opción de "recolectar estadísticas" de uso
+gatherUsageStats = false
