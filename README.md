@@ -86,6 +86,8 @@ git push -u origin main
 ```
 
 ---
+## Autor
+Desarrollado por [BrucceVT](https://github.com/BrucceVT)
 
 ## 🚧 Próximas mejoras (Roadmap)
 - Soporte para múltiples archivos (batch processing).

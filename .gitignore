@@ -19,3 +19,12 @@ temp_audio.mp3
 # VS Code
 .vscode/
 .idea/
+
+# Streamlit secret files
+.streamlit/secrets.toml
+
+#Demucs files
+demucs_out/
+temp_*.wav
+temp_*.mp3
+temp_*.mp4

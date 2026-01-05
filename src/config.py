@@ -1,6 +1,6 @@
 SERVICE_NAME = "VideoScribe-AI"
 
-# 🔓 PREMIUM LIBERADO (por ahora)
+# PREMIUM LIBERADO (por ahora)
 IS_PRO = True
 
 # Modelos Whisper disponibles
