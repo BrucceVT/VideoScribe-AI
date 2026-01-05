@@ -4,6 +4,7 @@ import streamlit as st
 from src.config import SERVICE_NAME
 from src.ui import (
     render_header,
+    render_author_fixed,
     sidebar_settings,
     render_file_info,
     show_step,
@@ -17,10 +18,10 @@ from src.demucs_vocals import separate_vocals_demucs, cleanup_demucs_artifacts
 from src.postprocess import postprocess_transcript
 
 
-# ---- Límites anti-abuso (ajústalos a tu gusto) ----
-MAX_MB = 250                 # tamaño máximo de subida
-MAX_MINUTES = 25             # duración máxima del video
-MAX_RUNS_PER_SESSION = 3     # transcripciones por sesión
+# ---- Límites anti-abuso ----
+MAX_MB = 250
+MAX_MINUTES = 25
+MAX_RUNS_PER_SESSION = 3
 
 
 def main():
@@ -31,6 +32,11 @@ def main():
     )
 
     render_header()
+
+    # ✅ Intento de footer fijo (visual). Aun si el navegador/iframe lo reacomoda,
+    # el autor queda SIEMPRE en sidebar.
+    render_author_fixed()
+
     settings = sidebar_settings()
 
     uploaded = st.file_uploader(
@@ -42,7 +48,6 @@ def main():
         st.caption("Consejo: Para música, activa “Separar voz” y usa modelo medium o large.")
         return
 
-    # --- Validación de tamaño (antes de procesar) ---
     size_mb = uploaded.size / 1024 / 1024
     if size_mb > MAX_MB:
         st.error(f"El archivo excede el máximo permitido ({MAX_MB} MB). Tamaño: {size_mb:.2f} MB.")
@@ -51,7 +56,7 @@ def main():
     render_file_info(uploaded)
 
     if st.button("Iniciar transcripción", type="primary"):
-        # --- Rate limit por sesión (anti abuso), NO cuenta si falla ---
+        # --- Rate limit por sesión (no cuenta si falla) ---
         st.session_state.setdefault("runs", 0)
         if st.session_state["runs"] >= MAX_RUNS_PER_SESSION:
             st.warning("Límite de transcripciones por sesión alcanzado. Intenta más tarde.")
@@ -61,17 +66,13 @@ def main():
         temp_video_path = f"temp_{safe_name}"
         temp_wav_path = f"temp_{os.path.splitext(safe_name)[0]}.wav"
 
-        # Temporales Demucs
         demucs_run_dir = None
+        audio_for_transcribe = temp_wav_path
 
-        # Streamlit guarda el archivo en memoria: lo volcamos a disco
         with open(temp_video_path, "wb") as f:
             f.write(uploaded.getbuffer())
 
-        audio_for_transcribe = temp_wav_path
-
         try:
-            # --- Duración (anti abuso) ---
             duration_sec = get_video_duration(temp_video_path)
             if duration_sec > 0:
                 st.info(f"Duración detectada: {fmt_time(duration_sec)}")
@@ -84,7 +85,6 @@ def main():
             else:
                 duration_sec = 0
 
-            # 1) Convertir a WAV 16k mono
             show_step("1/4 Preparando audio…")
             extract_wav_16k_mono(
                 video_path=temp_video_path,
@@ -92,21 +92,17 @@ def main():
                 normalize=settings["normalize_audio"],
             )
 
-            # 2) Demucs (solo si es música y el usuario lo activó)
             if settings.get("use_vocals") and "Música" in settings["audio_profile"]:
                 show_step("2/4 Separando voz…")
                 working_line("Separando voz… esto puede tardar unos minutos.")
-
                 vocals_mp3, demucs_run_dir = separate_vocals_demucs(temp_wav_path)
                 audio_for_transcribe = vocals_mp3
             else:
                 show_step("2/4 Saltando separación de voz…")
 
-            # 3) Cargar modelo Whisper
             show_step("3/4 Cargando modelo…")
             model = load_model_cached(settings["model_key"])
 
-            # 4) Transcribir
             show_step("4/4 Transcribiendo…")
             working_line("Procesando audio… (no cierres esta pestaña)")
 
@@ -121,7 +117,6 @@ def main():
                 st.warning("No se generó texto. Prueba otro modelo o ajusta segmentación.")
                 st.stop()
 
-            # Post-proceso genérico (NO reemplaza palabras)
             final_text = postprocess_transcript(
                 raw_text,
                 clean_text=settings.get("clean_text", True),
@@ -156,11 +151,10 @@ def main():
                 mime="text/plain",
             )
 
-            # Info de rendimiento (aprox)
             if stats.get("rtf") and duration_sec:
                 st.caption(f"Tiempo aprox en este equipo: {fmt_time(duration_sec * stats['rtf'])}")
 
-            # ✅ cuenta como “run” solo si terminó OK
+            # ✅ cuenta el run solo si terminó OK
             st.session_state["runs"] += 1
             st.success(
                 f"Listo. Transcripciones usadas en esta sesión: "
@@ -172,20 +166,14 @@ def main():
             st.exception(e)
 
         finally:
-            # Limpieza Demucs (evita llenar el disco en servidor)
             cleanup_demucs_artifacts(demucs_run_dir)
 
-            # Limpieza temporales principales
             for p in (temp_wav_path, temp_video_path):
                 if p and os.path.exists(p):
                     try:
                         os.remove(p)
                     except Exception:
                         pass
-
-    # Footer / autor
-    st.divider()
-    st.markdown("Desarrollado por **BrucceVT** · [github.com/BrucceVT](https://github.com/BrucceVT)")
 
 
 if __name__ == "__main__":

@@ -9,8 +9,6 @@ from .config import (
 
 
 def _inject_css():
-    # Estilo con alto contraste para light/dark. Usamos fondo claro semitransparente
-    # y texto oscuro; en modo oscuro sigue siendo legible porque el fondo se aclara.
     st.markdown(
         """
 <style>
@@ -18,25 +16,20 @@ def _inject_css():
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
+/* High contrast working line */
 .vs-working {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
   border-radius: 10px;
-
-  /* Fondo claro y borde, legible en light/dark */
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(15, 23, 42, 0.18);
-
-  /* Texto oscuro fuerte */
   color: rgba(15, 23, 42, 0.95);
   font-size: 0.95rem;
 }
-
 .vs-working strong { color: rgba(15, 23, 42, 0.98); }
 
-/* Si el tema es oscuro, igual mantenemos fondo claro para contraste */
 @media (prefers-color-scheme: dark) {
   .vs-working {
     background: rgba(255, 255, 255, 0.10);
@@ -59,10 +52,37 @@ header {visibility: hidden;}
   animation: vs-spin 0.9s linear infinite;
   flex: 0 0 auto;
 }
-
 @keyframes vs-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Footer fijo (opcional). Ojo: algunos themes/iframes pueden reordenar DOM,
+   por eso además lo ponemos en sidebar para que sea 100% permanente */
+.block-container { padding-bottom: 70px; }
+
+.vs-footer-fixed {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  padding: 10px 14px;
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.88);
+  border-top: 1px solid rgba(15, 23, 42, 0.15);
+  font-size: 0.9rem;
+  color: rgba(15, 23, 42, 0.92);
+  text-align: center;
+}
+.vs-footer-fixed a { text-decoration: none; }
+
+@media (prefers-color-scheme: dark) {
+  .vs-footer-fixed {
+    background: rgba(2, 6, 23, 0.55);
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.92);
+  }
 }
 </style>
 """,
@@ -74,6 +94,30 @@ def render_header():
     _inject_css()
     st.title(SERVICE_NAME)
     st.write("Transcripción de video a texto con Inteligencia Artificial.")
+
+
+def render_author_fixed():
+    """
+    Footer fijo visual. No dependemos solo de esto: también lo pintamos en sidebar.
+    """
+    st.markdown(
+        """
+<div class="vs-footer-fixed">
+  Desarrollado por <b>BrucceVT</b> ·
+  <a href="https://github.com/BrucceVT" target="_blank">github.com/BrucceVT</a>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_author_sidebar():
+    """
+    Esta es la forma 100% permanente: la sidebar siempre está renderizada.
+    """
+    st.markdown("---")
+    st.caption("Desarrollado por **BrucceVT**")
+    st.markdown("[github.com/BrucceVT](https://github.com/BrucceVT)")
 
 
 def fmt_time(seconds: float) -> str:
@@ -122,7 +166,7 @@ def sidebar_settings() -> dict:
         model_label = st.selectbox(
             "Modelo de transcripción",
             tuple(MODEL_OPTIONS.keys()),
-            index=1,  # medium por defecto
+            index=1,
         )
         model_key = MODEL_OPTIONS[model_label]
 
@@ -154,7 +198,7 @@ def sidebar_settings() -> dict:
         )
 
         normalize_elongations = st.checkbox(
-            "Normalizar alargamientos de palabras",
+            "Normalizar alargamientos (su-u-u / soooo)",
             value=True if "Música" in audio_profile else False,
             help="Convierte alargamientos en una forma más legible (sin cambiar palabras).",
         )
@@ -164,7 +208,7 @@ def sidebar_settings() -> dict:
             min_value=2,
             max_value=12,
             value=6 if "Música" in audio_profile else 3,
-            help="Evita loops infinitos. Los coros suelen repetirse, por eso el valor en música es más alto.",
+            help="Evita loops infinitos. Los coros suelen repetirse.",
         )
 
         st.divider()
@@ -177,6 +221,9 @@ def sidebar_settings() -> dict:
         silence_db = st.slider("Umbral de silencio (dB)", -60, -15, default_db)
         min_silence = st.slider("Silencio mínimo (seg)", 0.10, 2.0, default_min_sil, 0.05)
         min_segment = st.slider("Segmento mínimo (seg)", 0.50, 5.0, default_min_seg, 0.10)
+
+        # ✅ Autor permanente (sidebar)
+        render_author_sidebar()
 
     return {
         "language_label": language_label,
