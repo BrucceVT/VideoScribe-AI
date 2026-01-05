@@ -45,7 +45,7 @@ def main():
     )
 
     if uploaded is None:
-        st.caption("Consejo: Para música, activa “Separar voz” y usa modelo medium o large.")
+        st.caption("Consejo: Para música, activa “Separar voz” y usa “Máxima precisión”.")
         return
 
     size_mb = uploaded.size / 1024 / 1024

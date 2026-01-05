@@ -1,10 +1,12 @@
 import streamlit as st
+
 from .config import (
     SERVICE_NAME,
-    MODEL_OPTIONS,
     LANG_OPTIONS,
     AUDIO_PROFILES,
     PRECISION_LEVELS,
+    get_model_options,
+    is_streamlit_cloud,
 )
 
 
@@ -16,14 +18,14 @@ def _inject_css():
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
-/* High contrast working line */
+/* Línea de progreso visible (alto contraste) */
 .vs-working {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.90);
   border: 1px solid rgba(15, 23, 42, 0.18);
   color: rgba(15, 23, 42, 0.95);
   font-size: 0.95rem;
@@ -32,11 +34,11 @@ header {visibility: hidden;}
 
 @media (prefers-color-scheme: dark) {
   .vs-working {
-    background: rgba(255, 255, 255, 0.10);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    color: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.95);
   }
-  .vs-working strong { color: rgba(255, 255, 255, 0.98); }
+  .vs-working strong { color: rgba(255, 255, 255, 0.99); }
   .vs-spinner {
     border: 2px solid rgba(255, 255, 255, 0.25);
     border-top: 2px solid rgba(255, 255, 255, 0.95);
@@ -57,10 +59,8 @@ header {visibility: hidden;}
   100% { transform: rotate(360deg); }
 }
 
-/* Footer fijo (opcional). Ojo: algunos themes/iframes pueden reordenar DOM,
-   por eso además lo ponemos en sidebar para que sea 100% permanente */
+/* Footer fijo (visual). Además se muestra en sidebar (permanente). */
 .block-container { padding-bottom: 70px; }
-
 .vs-footer-fixed {
   position: fixed;
   left: 0;
@@ -76,7 +76,6 @@ header {visibility: hidden;}
   text-align: center;
 }
 .vs-footer-fixed a { text-decoration: none; }
-
 @media (prefers-color-scheme: dark) {
   .vs-footer-fixed {
     background: rgba(2, 6, 23, 0.55);
@@ -92,14 +91,11 @@ header {visibility: hidden;}
 
 def render_header():
     _inject_css()
-    st.title(SERVICE_NAME)
-    st.write("Transcripción de video a texto con Inteligencia Artificial.")
+    st.title(f"{SERVICE_NAME} — Transcripción")
+    st.write("Convierte videos a texto con Inteligencia Artificial.")
 
 
 def render_author_fixed():
-    """
-    Footer fijo visual. No dependemos solo de esto: también lo pintamos en sidebar.
-    """
     st.markdown(
         """
 <div class="vs-footer-fixed">
@@ -112,9 +108,6 @@ def render_author_fixed():
 
 
 def render_author_sidebar():
-    """
-    Esta es la forma 100% permanente: la sidebar siempre está renderizada.
-    """
     st.markdown("---")
     st.caption("Desarrollado por **BrucceVT**")
     st.markdown("[github.com/BrucceVT](https://github.com/BrucceVT)")
@@ -163,12 +156,20 @@ def sidebar_settings() -> dict:
 
         st.divider()
 
+        model_options = get_model_options()
+        if is_streamlit_cloud():
+            st.info(
+                "Por limitaciones de recursos en Streamlit Cloud, el modelo disponible es "
+                "**Estándar (small)**. Para usar medium/large, despliega en un servidor con más RAM "
+                "o migra a faster-whisper."
+            )
+
         model_label = st.selectbox(
             "Modelo de transcripción",
-            tuple(MODEL_OPTIONS.keys()),
-            index=1,
+            tuple(model_options.keys()),
+            index=0,
         )
-        model_key = MODEL_OPTIONS[model_label]
+        model_key = model_options[model_label]
 
         st.divider()
 
@@ -222,7 +223,6 @@ def sidebar_settings() -> dict:
         min_silence = st.slider("Silencio mínimo (seg)", 0.10, 2.0, default_min_sil, 0.05)
         min_segment = st.slider("Segmento mínimo (seg)", 0.50, 5.0, default_min_seg, 0.10)
 
-        # ✅ Autor permanente (sidebar)
         render_author_sidebar()
 
     return {
