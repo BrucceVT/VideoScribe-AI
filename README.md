@@ -1,26 +1,28 @@
-# Transcriptor de Video a Texto (Whisper) 🎙️🎬
+# VideoScribe-AI 🎙️🎬
 
-Este es un script de Python diseñado para extraer el audio de archivos de video y convertirlo a texto utilizando la tecnología de Inteligencia Artificial **Whisper** de OpenAI.
+Herramienta de transcripción de video a texto impulsada por **OpenAI Whisper**. Extrae el audio de archivos de video y lo convierte en texto con alta precisión en español e inglés. Ofrece dos formas de uso: un **script por terminal** (rápido y directo) y una **interfaz web interactiva** con opciones avanzadas como separación de voz, selección de modelo y post-procesamiento del texto.
 
 > **Nota:** Este proyecto está configurado y probado específicamente para **Windows**.
 
+---
+
 ## 🚀 Requisitos Previos
 
-### 1. Instalar FFmpeg (Obligatorio en Windows)
-Este script requiere FFmpeg para procesar archivos multimedia.
+### 1. Python 3.8 o superior
+Asegúrate de tener Python instalado y agregado al PATH.
 
-1. Descarga el archivo `ffmpeg-release-essentials.zip` desde [Gyan.dev](https://www.gyan.dev/ffmpeg/builds/).
+### 2. FFmpeg (Obligatorio)
+1. Descarga `ffmpeg-release-essentials.zip` desde [gyan.dev](https://www.gyan.dev/ffmpeg/builds/).
 2. Extrae la carpeta en `C:\ffmpeg`.
 3. Agrega `C:\ffmpeg\bin` a las **Variables de Entorno (PATH)** de tu sistema.
-4. Verifica la instalación abriendo una terminal y escribiendo:
+4. Verifica la instalación:
    ```bash
    ffmpeg -version
    ```
 
-### 2. Python 3.8 o superior
-Asegúrate de tener Python instalado y agregado al PATH.
+---
 
-## 🛠️ Instalación y Uso
+## 🛠️ Instalación
 
 ### 1. Clonar el repositorio
 ```bash
@@ -31,65 +33,114 @@ cd VideoScribe-AI
 ### 2. Crear y activar el entorno virtual
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
 ```
+
+- **CMD (Windows):**
+  ```bash
+  .venv\Scripts\activate
+  ```
+- **Git Bash / Linux / macOS:**
+  ```bash
+  source .venv/Scripts/activate   # Git Bash en Windows
+  source .venv/bin/activate       # Linux / macOS
+  ```
 
 ### 3. Instalar dependencias
 ```bash
-pip install moviepy openai-whisper torch
+pip install -r requirements.txt
 ```
 
-### 4. Ejecutar el script
+---
+
+## ⚡ Inicio Rápido
+
+Una vez instaladas las dependencias, la forma más fácil de iniciar es con el script `start.sh`:
+
+```bash
+bash start.sh
+```
+
+El script activa automáticamente el entorno virtual, detecta tu sistema operativo y te presenta un menú para elegir el modo de transcripción:
+
+```
+==========================================
+  🎙️  VideoScribe-AI
+==========================================
+
+  ¿Cómo deseas transcribir?
+
+  1) Terminal   — Rápido y directo
+  2) Interfaz   — Web con opciones avanzadas
+
+  Selecciona una opción (1/2):
+```
+
+---
+
+## 📝 Uso Detallado
+
+### Opción 1: Modo Terminal (Script directo)
+
+La forma más rápida y sencilla. Ejecuta el script `transcriptor.py` y arrastra un archivo de video a la terminal cuando lo solicite:
+
 ```bash
 python transcriptor.py
 ```
 
-## 📝 Cómo funciona
-- El script extrae el audio del video en formato `.mp3`.
-- Utiliza el modelo **medium** de Whisper para una alta precisión en Español Latinoamericano.
-- Genera un archivo `.txt` con el mismo nombre del video en la carpeta de origen.
+**¿Cómo funciona?**
+1. El script te pide la ruta del video (puedes arrastrar el archivo directamente a la terminal).
+2. Extrae el audio del video automáticamente.
+3. Utiliza el modelo **medium** de Whisper para transcribir con alta precisión en español.
+4. Genera un archivo `.txt` con el mismo nombre del video en la misma carpeta.
 
-## ✨ Créditos
-- OpenAI Whisper  
-- MoviePy  
-
----
-
-## 📤 Pasos para subirlo a GitHub
-
-Si ya creaste el repositorio vacío en GitHub, ejecuta estos comandos en tu terminal (dentro de la carpeta del proyecto):
-
-### 1. Inicializar el repositorio local
-```bash
-git init
+**Ejemplo:**
 ```
+--- TRANSCRIPTOR PRO (ESPAÑOL) ---
+Arrastra el video aquí: C:\Users\Usuario\Videos\clase.mp4
 
-### 2. Agregar los archivos
-```bash
-git add .
-```
+--- 1. Extrayendo audio del video ---
+--- 2. Cargando modelo Whisper MEDIUM (Más preciso) ---
+--- 3. Transcribiendo en Español Latino... ---
 
-### 3. Primer commit
-```bash
-git commit -m "Versión inicial: Extracción de audio y transcripción con Whisper medium"
-```
-
-### 4. Conectar con GitHub
-```bash
-git branch -M main
-git remote add origin https://github.com/BrucceVT/VideoScribe-AI
-```
-
-### 5. Subir todo
-```bash
-git push -u origin main
+✅ ¡Listo! Transcripción mejorada en: C:\Users\Usuario\Videos\clase.txt
 ```
 
 ---
-## Autor
+
+### Opción 2: Interfaz Web (Streamlit)
+
+Una interfaz gráfica completa con opciones avanzadas de configuración. Ideal para usuarios que prefieren una experiencia visual o necesitan ajustar parámetros de transcripción.
+
+```bash
+streamlit run app.py
+```
+
+Esto abrirá la aplicación en tu navegador (por defecto en `http://localhost:8501`).
+
+**Características de la interfaz:**
+- 📤 **Subida de archivos**: Sube videos MP4, MOV, AVI o MKV (máx. 250 MB, 25 min).
+- 🌐 **Idioma**: Selecciona entre Español e Inglés.
+- 🤖 **Modelos**: Elige entre Estándar (small), Alta precisión (medium) o Precisión máxima (large).
+- 🎵 **Perfiles de audio**: Optimizado para voz clara o música/ruido.
+- 🎤 **Separación de voz**: Usa Demucs para aislar la voz del instrumental (ideal para canciones).
+- ✨ **Post-procesamiento**: Limpieza automática del texto, normalización de alargamientos y control de repeticiones.
+- 📊 **Segmentación**: Ajusta umbrales de silencio y duración de segmentos.
+- 💾 **Descarga**: Descarga la transcripción como archivo `.txt`.
+
+---
+
+## ✨ Tecnologías
+
+| Tecnología | Descripción |
+|---|---|
+| [OpenAI Whisper](https://github.com/openai/whisper) | Motor de transcripción por IA |
+| [Streamlit](https://streamlit.io/) | Framework para la interfaz web |
+| [MoviePy](https://zulko.github.io/moviepy/) | Extracción de audio de video |
+| [Demucs](https://github.com/facebookresearch/demucs) | Separación de voz/instrumental |
+| [FFmpeg](https://ffmpeg.org/) | Procesamiento multimedia |
+
+---
+
+## 👤 Autor
+
 Desarrollado por [BrucceVT](https://github.com/BrucceVT)
-
-## 🚧 Próximas mejoras (Roadmap)
-- Soporte para múltiples archivos (batch processing).
-- Interfaz gráfica sencilla (GUI).
-- Exportación a formato de subtítulos `.srt`.
