@@ -243,6 +243,10 @@ def sidebar_settings() -> dict:
     }
 
 
-def render_file_info(uploaded):
-    st.video(uploaded)
+def render_file_info(uploaded, is_audio: bool = False):
+    if is_audio:
+        st.audio(uploaded)
+    else:
+        st.video(uploaded)
     st.write(f"Archivo: `{uploaded.name}` — {uploaded.size / 1024 / 1024:.2f} MB")
+

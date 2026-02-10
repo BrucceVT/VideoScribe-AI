@@ -2,6 +2,7 @@ import os
 import streamlit as st
 
 from src.config import SERVICE_NAME
+from src.ffmpeg_audio import is_audio_file, convert_to_wav_16k_mono, get_media_duration
 from src.ui import (
     render_header,
     render_author_fixed,
@@ -11,7 +12,6 @@ from src.ui import (
     working_line,
     fmt_time,
 )
-from src.ffmpeg_audio import extract_wav_16k_mono, get_video_duration
 from src.transcriber import load_model_cached, transcribe_with_silence_segments
 from src.export import build_transcript_file, make_download_name
 from src.demucs_vocals import separate_vocals_demucs, cleanup_demucs_artifacts
@@ -40,12 +40,12 @@ def main():
     settings = sidebar_settings()
 
     uploaded = st.file_uploader(
-        "Sube un video (MP4, MOV, AVI, MKV)",
-        type=["mp4", "mov", "avi", "mkv"],
+        "Sube un video o audio (MP4, MOV, AVI, MKV, MP3, WAV, OGG, FLAC, M4A)",
+        type=["mp4", "mov", "avi", "mkv", "mp3", "wav", "ogg", "flac", "m4a"],
     )
 
     if uploaded is None:
-        st.caption("Consejo: Para música, activa “Separar voz” y usa “Máxima precisión”.")
+        st.caption("Consejo: Para música, activa “Separar voz” y usa “Máxima precisión”. También puedes subir archivos de audio directamente.")
         return
 
     size_mb = uploaded.size / 1024 / 1024
@@ -53,7 +53,8 @@ def main():
         st.error(f"El archivo excede el máximo permitido ({MAX_MB} MB). Tamaño: {size_mb:.2f} MB.")
         st.stop()
 
-    render_file_info(uploaded)
+    is_audio = is_audio_file(uploaded.name)
+    render_file_info(uploaded, is_audio)
 
     if st.button("Iniciar transcripción", type="primary"):
         # --- Rate limit por sesión (no cuenta si falla) ---
@@ -73,7 +74,7 @@ def main():
             f.write(uploaded.getbuffer())
 
         try:
-            duration_sec = get_video_duration(temp_video_path)
+            duration_sec = get_media_duration(temp_video_path)
             if duration_sec > 0:
                 st.info(f"Duración detectada: {fmt_time(duration_sec)}")
                 if duration_sec > MAX_MINUTES * 60:
@@ -85,9 +86,12 @@ def main():
             else:
                 duration_sec = 0
 
-            show_step("1/4 Preparando audio…")
-            extract_wav_16k_mono(
-                video_path=temp_video_path,
+            if is_audio:
+                show_step("1/4 Convirtiendo audio…")
+            else:
+                show_step("1/4 Extrayendo audio del video…")
+            convert_to_wav_16k_mono(
+                input_path=temp_video_path,
                 wav_path=temp_wav_path,
                 normalize=settings["normalize_audio"],
             )

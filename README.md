@@ -1,8 +1,15 @@
 # VideoScribe-AI 🎙️🎬
 
-Herramienta de transcripción de video a texto impulsada por **OpenAI Whisper**. Extrae el audio de archivos de video y lo convierte en texto con alta precisión en español e inglés. Ofrece dos formas de uso: un **script por terminal** (rápido y directo) y una **interfaz web interactiva** con opciones avanzadas como separación de voz, selección de modelo y post-procesamiento del texto.
+Herramienta de transcripción de **video y audio** a texto impulsada por **OpenAI Whisper**. Extrae el audio de archivos multimedia y lo convierte en texto con alta precisión en español e inglés. Ofrece dos formas de uso: un **script por terminal** (rápido y directo) y una **interfaz web interactiva** con opciones avanzadas como separación de voz, selección de modelo y post-procesamiento del texto.
 
 > **Nota:** Este proyecto está configurado y probado específicamente para **Windows**.
+
+### Formatos soportados
+
+| Tipo | Extensiones |
+|---|---|
+| 🎬 Video | MP4, MOV, AVI, MKV |
+| 🎵 Audio | MP3, WAV, OGG, FLAC, M4A |
 
 ---
 
@@ -81,28 +88,30 @@ El script activa automáticamente el entorno virtual, detecta tu sistema operati
 
 ### Opción 1: Modo Terminal (Script directo)
 
-La forma más rápida y sencilla. Ejecuta el script `transcriptor.py` y arrastra un archivo de video a la terminal cuando lo solicite:
+La forma más rápida y sencilla. Ejecuta el script `transcriptor.py` y arrastra un archivo de video o audio a la terminal cuando lo solicite:
 
 ```bash
 python transcriptor.py
 ```
 
 **¿Cómo funciona?**
-1. El script te pide la ruta del video (puedes arrastrar el archivo directamente a la terminal).
-2. Extrae el audio del video automáticamente.
-3. Utiliza el modelo **medium** de Whisper para transcribir con alta precisión en español.
-4. Genera un archivo `.txt` con el mismo nombre del video en la misma carpeta.
+1. El script te pide la ruta del archivo (puedes arrastrar el archivo directamente a la terminal).
+2. Detecta automáticamente si es video o audio.
+3. Si es video, extrae el audio. Si es audio, lo procesa directamente.
+4. Utiliza el modelo **medium** de Whisper para transcribir con alta precisión en español.
+5. Genera un archivo `.txt` con el mismo nombre del archivo en la misma carpeta.
 
 **Ejemplo:**
 ```
 --- TRANSCRIPTOR PRO (ESPAÑOL) ---
-Arrastra el video aquí: C:\Users\Usuario\Videos\clase.mp4
+    Formatos soportados: AAC, AVI, FLAC, FLV, M4A, MKV, MOV, MP3, MP4, OGG, OPUS, WAV, WEBM, WMA, WMV
+Arrastra el archivo aquí: C:\Users\Usuario\Música\cancion.mp3
 
---- 1. Extrayendo audio del video ---
+--- 1. Archivo de audio detectado, procesando directamente ---
 --- 2. Cargando modelo Whisper MEDIUM (Más preciso) ---
 --- 3. Transcribiendo en Español Latino... ---
 
-✅ ¡Listo! Transcripción mejorada en: C:\Users\Usuario\Videos\clase.txt
+✅ ¡Listo! Transcripción mejorada en: C:\Users\Usuario\Música\cancion.txt
 ```
 
 ---
@@ -118,7 +127,7 @@ streamlit run app.py
 Esto abrirá la aplicación en tu navegador (por defecto en `http://localhost:8501`).
 
 **Características de la interfaz:**
-- 📤 **Subida de archivos**: Sube videos MP4, MOV, AVI o MKV (máx. 250 MB, 25 min).
+- 📤 **Subida de archivos**: Sube videos o audios (máx. 250 MB, 25 min).
 - 🌐 **Idioma**: Selecciona entre Español e Inglés.
 - 🤖 **Modelos**: Elige entre Estándar (small), Alta precisión (medium) o Precisión máxima (large).
 - 🎵 **Perfiles de audio**: Optimizado para voz clara o música/ruido.
