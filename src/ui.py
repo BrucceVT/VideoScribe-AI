@@ -8,15 +8,21 @@ from .config import (
     get_model_options,
     is_streamlit_cloud,
 )
+from .session_sec import get_runs_for_user
 
 
 def _inject_css():
     st.markdown(
         """
 <style>
-#MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-header {visibility: hidden;}
+
+/* Constrain wide mode width so it doesn't stretch infinitely and space out awkwardly */
+.block-container { 
+    max-width: 1400px; 
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
 
 /* Línea de progreso visible (alto contraste) */
 .vs-working {
@@ -144,7 +150,20 @@ def working_line(text: str):
 
 def sidebar_settings() -> dict:
     with st.sidebar:
+        # Recuperamos info del usuario
+        runs, max_runs = get_runs_for_user({})
+        
         st.header("Configuración")
+        
+        # Display the attempts
+        if max_runs == 999:
+            st.success("✨ **Modo VIP activo** (Transcripciones ilimitadas)")
+        else:
+            remaining = max(0, max_runs - runs)
+            if remaining > 0:
+                st.info(f"💡 **Intentos restantes:** {remaining} de {max_runs}")
+            else:
+                st.error("⚠️ **Sin intentos restantes** (Espera a mañana o ingresa código)")
 
         language_label = st.selectbox(
             "Idioma del audio",
@@ -156,72 +175,71 @@ def sidebar_settings() -> dict:
 
         st.divider()
 
-        model_options = get_model_options()
-        if is_streamlit_cloud():
-            st.info(
-                "Por limitaciones de recursos en Streamlit Cloud, el modelo disponible es "
-                "**Estándar (small)**. Para usar medium/large, despliega en un servidor con más RAM "
-                "o migra a faster-whisper."
+        with st.expander("🤖 Modelo de IA", expanded=False):
+            model_options = get_model_options()
+            if is_streamlit_cloud():
+                st.info(
+                    "Por limitaciones de recursos en Streamlit Cloud, el modelo disponible es "
+                    "**Estándar (small)**."
+                )
+
+            model_label = st.selectbox(
+                "Modelo de transcripción",
+                tuple(model_options.keys()),
+                index=0,
             )
+            model_key = model_options[model_label]
 
-        model_label = st.selectbox(
-            "Modelo de transcripción",
-            tuple(model_options.keys()),
-            index=0,
-        )
-        model_key = model_options[model_label]
+        with st.expander("🎧 Preferencias de Audio", expanded=False):
+            audio_profile = st.selectbox("Perfil de audio", AUDIO_PROFILES, index=1)
+            precision = st.selectbox("Nivel de precisión", PRECISION_LEVELS, index=2)
 
-        st.divider()
-
-        audio_profile = st.selectbox("Perfil de audio", AUDIO_PROFILES, index=1)
-        precision = st.selectbox("Nivel de precisión", PRECISION_LEVELS, index=2)
-
-        normalize_audio = st.checkbox(
-            "Mejorar audio (normalización ligera)",
-            value=True,
-        )
-
-        use_vocals = False
-        if "Música" in audio_profile:
-            use_vocals = st.checkbox(
-                "Separar voz (mejora letras)",
+            normalize_audio = st.checkbox(
+                "Mejorar audio (normalización ligera)",
                 value=True,
-                help="Aísla la voz del instrumental antes de transcribir.",
             )
 
+            use_vocals = False
+            if "Música" in audio_profile:
+                use_vocals = st.checkbox(
+                    "Separar voz (mejora letras)",
+                    value=True,
+                    help="Aísla la voz del instrumental antes de transcribir.",
+                )
+
+        with st.expander("📝 Calidad del texto", expanded=False):
+            clean_text = st.checkbox(
+                "Limpieza automática",
+                value=True,
+                help="Reduce basura típica (muchos signos) y líneas vacías repetidas.",
+            )
+
+            normalize_elongations = st.checkbox(
+                "Normalizar alargamientos (su-u-u / soooo)",
+                value=True if "Música" in audio_profile else False,
+                help="Convierte alargamientos en una forma más legible (sin cambiar palabras).",
+            )
+
+            max_consecutive_repeats = st.slider(
+                "Repeticiones consecutivas máximas (por línea)",
+                min_value=2,
+                max_value=12,
+                value=6 if "Música" in audio_profile else 3,
+                help="Evita loops infinitos. Los coros suelen repetirse.",
+            )
+
+        with st.expander("✂️ Segmentación", expanded=False):
+            default_db = -35 if "Música" in audio_profile else -40
+            default_min_sil = 0.30 if "Música" in audio_profile else 0.45
+            default_min_seg = 1.20 if "Música" in audio_profile else 1.50
+
+            silence_db = st.slider("Umbral de silencio (dB)", -60, -15, default_db)
+            min_silence = st.slider("Silencio mínimo (seg)", 0.10, 2.0, default_min_sil, 0.05)
+            min_segment = st.slider("Segmento mínimo (seg)", 0.50, 5.0, default_min_seg, 0.10)
+
         st.divider()
-        st.subheader("Calidad del texto")
-
-        clean_text = st.checkbox(
-            "Limpieza automática",
-            value=True,
-            help="Reduce basura típica (muchos signos) y líneas vacías repetidas.",
-        )
-
-        normalize_elongations = st.checkbox(
-            "Normalizar alargamientos (su-u-u / soooo)",
-            value=True if "Música" in audio_profile else False,
-            help="Convierte alargamientos en una forma más legible (sin cambiar palabras).",
-        )
-
-        max_consecutive_repeats = st.slider(
-            "Repeticiones consecutivas máximas (por línea)",
-            min_value=2,
-            max_value=12,
-            value=6 if "Música" in audio_profile else 3,
-            help="Evita loops infinitos. Los coros suelen repetirse.",
-        )
-
-        st.divider()
-        st.subheader("Segmentación")
-
-        default_db = -35 if "Música" in audio_profile else -40
-        default_min_sil = 0.30 if "Música" in audio_profile else 0.45
-        default_min_seg = 1.20 if "Música" in audio_profile else 1.50
-
-        silence_db = st.slider("Umbral de silencio (dB)", -60, -15, default_db)
-        min_silence = st.slider("Silencio mínimo (seg)", 0.10, 2.0, default_min_sil, 0.05)
-        min_segment = st.slider("Segmento mínimo (seg)", 0.50, 5.0, default_min_seg, 0.10)
+        st.subheader("Acceso VIP")
+        secret_code = st.text_input("Código secreto (Opcional)", type="password", help="Ingresa el código VIP para usar la aplicación de forma ilimitada.")
 
         render_author_sidebar()
 
@@ -240,6 +258,7 @@ def sidebar_settings() -> dict:
         "silence_db": silence_db,
         "min_silence": min_silence,
         "min_segment": min_segment,
+        "secret_code": secret_code,
     }
 
 
