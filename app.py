@@ -37,14 +37,10 @@ def main():
 
     settings = sidebar_settings()
 
-    # Inicializar estado para saber si hay archivo o no y hacer shift
-    if "has_file" not in st.session_state:
-        st.session_state.has_file = False
+    # Usar una única key para no perder el widget cargado al cambiar el diseño
+    has_file = st.session_state.get("main_uploader") is not None
 
-    def on_upload_change():
-        st.session_state.has_file = True
-
-    if not st.session_state.has_file:
+    if not has_file:
         # Layout centrado inicial Premium
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         col_space_l, center_col, col_space_r = st.columns([1, 1.5, 1])
@@ -60,8 +56,7 @@ def main():
             uploaded = st.file_uploader(
                 "",
                 type=["mp4", "mov", "avi", "mkv", "mp3", "wav", "ogg", "flac", "m4a"],
-                on_change=on_upload_change,
-                key="uploader_center",
+                key="main_uploader",
                 label_visibility="collapsed"
             )
             if uploaded is None:
@@ -76,12 +71,11 @@ def main():
         uploaded = st.file_uploader(
             "Archivo seleccionado",
             type=["mp4", "mov", "avi", "mkv", "mp3", "wav", "ogg", "flac", "m4a"],
-            key="uploader_side"
+            key="main_uploader"
         )
 
         if uploaded is None:
             # Si el usuario borra el archivo desde la vista de 2 columnas, regresamos al centro
-            st.session_state.has_file = False
             st.rerun()
 
         size_mb = uploaded.size / 1024 / 1024
